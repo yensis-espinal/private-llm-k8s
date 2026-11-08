@@ -3,15 +3,12 @@
 **A two-node Kubernetes lab for local model serving — built security-first, documented as a
 risk register, and red-teamed including the AI agent that helped build it.**
 
-> *Sanitized write-up. Derived from an internal repository; all addresses, hostnames, MAC
-> addresses, server names and account identifiers removed. Findings are referenced by their
-> register IDs.*
 
 ---
 
 ## What it is
 
-A private Kubernetes cluster for running large language models on my own hardware: a
+A self-directed home lab for running large language models on my own hardware: a
 controller VM and a GPU worker (RTX 2080, 8 GB VRAM, 64 GB host RAM), serving an 8B model
 through a local chat UI. No model traffic leaves the network, and nothing is exposed — the
 only path to the UI begins with an authenticated SSH session over a WireGuard-based mesh.
@@ -21,11 +18,9 @@ completely and then hold it to a standard I would defend in a production review:
 everywhere, every exception documented, every claim verified against the running system rather
 than the manifest that was supposed to produce it.
 
-**Current state:** 28 lab findings opened, 18 closed and verified on live hosts. Ten stay open,
-including one whose fix is written, tested and deliberately *not* applied — recorded as accepted
-with its residual risk stated, rather than left reading as done. A further 9 concern the wider
-corporate network the lab sits on — 5 owned by the infrastructure team, 3 mine, 1 shared — all
-tracked in the same register whether or not I can close them.
+**Risk tracking:** The lab uses a risk register to distinguish verified fixes from open
+items and accepted residual risks. A fix that is written and tested but deliberately not
+applied is not recorded as completed.
 
 ---
 
@@ -33,7 +28,7 @@ tracked in the same register whether or not I can close them.
 
 | Layer | Decision |
 |---|---|
-| Admin access | Mesh VPN with SSH only. No cluster port reachable from the office network. |
+| Admin access | Mesh VPN with SSH only; administrative access is restricted to the authenticated path. |
 | Model UI | No Service exposed, no ingress controller. Reached by SSH tunnel + `port-forward`. |
 | Host firewall | Default-deny on both nodes; every allow rule carries a comment and a doc entry. |
 | Pod network | Default-deny ingress **and** egress in the serving namespace; seven explicit policies. |
@@ -55,8 +50,8 @@ Two deliberate trade-offs, stated rather than hidden:
 ## Four findings I'd actually talk about in an interview
 
 They share a theme, and it is the thing I'd want to be hired for noticing: **every one is a
-control that appeared to be working.** None was found by an attacker, a scanner or an alert.
-Each was found by distrusting a green result and checking what it actually proved.
+control that appeared to be working.** The lesson is to question a green result and check
+what it actually proves.
 
 ### 1. A staged security control went stale and would have caused a silent monitoring blackout
 
@@ -161,7 +156,7 @@ They point in opposite directions and cost the same thing: a register nobody tru
 skimmed instead of read.
 
 The rule that came out of it: the **change log is the ledger of what happened**; the risk
-register is current state *derived* from it. When they disagree, the change log wins. Reconcile
+register reflects the current state recorded in it. When they disagree, the change log wins. Reconcile
 both in the same session as any status change, and never record a status that no verification
 step supports. "To confirm" is a ❌, not a ✅.
 
@@ -186,7 +181,7 @@ the machine looked correct but was still leasing.
   policy. Open, and rated High. The backup is a mitigation, not the fix.
 - One container image exists only in a single node's local store with no registry copy. The
   manifest is in version control; the image is not.
-- Monitoring is deliberately *not* built yet. It closes no finding, and the decision recorded
+- A full metrics-monitoring stack is deliberately *not* built yet. It closes no finding, and the decision recorded
   for when it is built is standalone metrics collection with static scrape targets rather than
   the standard operator chart — because service discovery is the only reason the collector
   would need a cluster-wide read grant, and a two-node lab with a handful of stable endpoints
